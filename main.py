@@ -9,9 +9,13 @@ import sqlite3
 
 def get_data(file_name):
     table_names = {"Closing Information","Transaction Information","Loan Information"}
-
+    try:
     #get list of tables returned from camelot read pdf method, for all pages
-    tables = camelot.read_pdf(pdf_path, flavor='stream', pages="1")
+        tables = camelot.read_pdf(pdf_path, flavor='stream', pages="1")
+    except FileNotFoundError:
+        print("No file named : ", file_name)
+    except Exception as e:
+        print("Error : ", e)
 
     #output tables
     #for table in tables:
@@ -56,35 +60,38 @@ def parse_table_data(tables, table_dict):
     for tableKey, tableValue in table_dict.items():
         #find location of tables: "Closing Information","Transaction Information","Loan Information"
         row, column = get_coordinates(tableKey, tables)
-        row_start = row + 1
-        #print("row: ", row)
-        #print("column: ", column)
+        if(row == None and column == None):
+            print("Table ", tableKey, " does not exist.")
+        else:
+            row_start = row + 1
+            #print("row: ", row)
+            #print("column: ", column)
 
-        #get data for each table:
-        #iterate through the table data of the rows starting beneath the table titles, in each column (i) accordingly (which corresponds to each table of: {"Closing Information":{}, "Transaction Information": {}, "Loan Information":{}})
-        for index, value in df.iloc[row_start:, i].items():
-            # print("index: ", index)
-            #print("value: ", value)
+            #get data for each table:
+            #iterate through the table data of the rows starting beneath the table titles, in each column (i) accordingly (which corresponds to each table of: {"Closing Information":{}, "Transaction Information": {}, "Loan Information":{}})
+            for index, value in df.iloc[row_start:, i].items():
+                # print("index: ", index)
+                #print("value: ", value)
 
-            #checking if value to avoid keeping track of empty spaces
-            if value:
-                if "Property" in value:
-                        #add extra line
-                    value += df.iloc[index + 1,i]
-                elif "Borrower" in value:
-                    #add 2 extra lines
-                    value += " " + df.iloc[index + 1,i] + df.iloc[index + 2,i]            
-                if '\n' in value:
-                    key, value = value.split('\n')
-                    if "Loan Type" in key:
-                        #stripping the 'X' selection
-                        value = value[2:]
-                    if "Loan ID #" in key:
-                        #stripping the '#', this causes a problem with the SQL queries
-                        key = key[:-2]
-                    #populating the dictionary for each table
-                    table_dict[tableKey][key] = value
-        i = i + 1
+                #checking if value to avoid keeping track of empty spaces
+                if value:
+                    if "Property" in value:
+                            #add extra line
+                        value += df.iloc[index + 1,i]
+                    elif "Borrower" in value:
+                        #add 2 extra lines
+                        value += " " + df.iloc[index + 1,i] + df.iloc[index + 2,i]            
+                    if '\n' in value:
+                        key, value = value.split('\n')
+                        if "Loan Type" in key:
+                            #stripping the 'X' selection
+                            value = value[2:]
+                        if "Loan ID #" in key:
+                            #stripping the '#', this causes a problem with the SQL queries
+                            key = key[:-2]
+                        #populating the dictionary for each table
+                        table_dict[tableKey][key] = value
+            i = i + 1
     return table_dict
 
 def format_json(data_dict):
@@ -97,42 +104,57 @@ def format_json(data_dict):
     print(json_obj)
 
 def format_sql(data):
-    #connect to db, which creates the db
-    conn = sqlite3.connect('Closing_Disclosure.db')
-    cursor = conn.cursor()
+    try:
+        #connect to db, which creates the db
+        conn = sqlite3.connect('Closing_Disclosure.db')
+        cursor = conn.cursor()
 
-    #iterate through dictionary of extracted tables and create tables
-    for key, item in data.items():
-        #set columns names accordings to the keys in each nested dictionary
-        column_names = list(item.keys())
-        #replace spaces with underscores, otherwise this causes complication in the queries
-        column_names = list(map(lambda x: x.replace(" ", "_"), column_names))
-        #set values accordings to the values mapped to the keys in each nested dictionary
-        values = tuple(item.values())
+        #iterate through dictionary of extracted tables and create tables
+        for key, item in data.items():
+            if data[key]:
+                #set columns names accordings to the keys in each nested dictionary
+                column_names = list(item.keys())
+                #replace spaces with underscores, otherwise this causes complication in the queries
+                column_names = list(map(lambda x: x.replace(" ", "_"), column_names))
+                #set values accordings to the values mapped to the keys in each nested dictionary
+                values = tuple(item.values())
 
-        #table names
-        #replace spaces with underscores, otherwise this causes complication in the queries
-        key = key.replace(" ", "_")
+                #table names
+                #replace spaces with underscores, otherwise this causes complication in the queries
+                key = key.replace(" ", "_")
+                print("key: ", key)
+                #create table, if it does not already exist
+                #key: table name
+                create_table_sql = f'CREATE TABLE IF NOT EXISTS {key} ({", ".join(f"{name} TEXT" for name in column_names)})'
+                print(create_table_sql)
+                cursor.execute(create_table_sql)
 
-        #create table, if it does not already exist
-        #key: table name
-        create_table_sql = f'CREATE TABLE IF NOT EXISTS {key} ({", ".join(f"{name} TEXT" for name in column_names)})'
-        cursor.execute(create_table_sql)
+                #populate tables with camelot table PDF extract
+                insert_sql = f'INSERT INTO {key} ({", ".join(column_names)}) VALUES ({", ".join("?" for _ in column_names)})'
+                cursor.execute(insert_sql, values)
+            
 
-        #populate tables with camelot table PDF extract
-        insert_sql = f'INSERT INTO {key} ({", ".join(column_names)}) VALUES ({", ".join("?" for _ in column_names)})'
-        cursor.execute(insert_sql, values)
 
-    #Make sure to commit changes and close connection
-    conn.commit()
-    conn.close()
+        #Make sure to commit changes
+        conn.commit()
+
+    except sqlite3.Error as e:
+        print("Error with SQLite: ", e)
+    except Exception as e:
+        print("Error: ", e)
+    finally:
+        #and close connection
+        conn.close()
 
 if __name__ == "__main__":
    pdf_path = "Closing_Disclosure.pdf"
    #extract data
    tables = get_data(pdf_path)
-   #table_names = {"Closing Information","Transaction Information","Loan Information"}
-   table_dict  = {"Closing Information":{}, "Transaction Information": {}, "Loan Information":{}}
+
+   #base for dictionary where to place extracted information
+   table_dict  = {"Closing Infomation":{}, "Transaction Information": {}, "Loan Information":{}}
+
+   #if camelot extracted tables
    if tables:
     #parse data
     table_dict = parse_table_data(tables, table_dict)
@@ -142,7 +164,6 @@ if __name__ == "__main__":
    else:
        print("No tables found")
        #need unit test here
-   #print(table_dict)
    
 
     
