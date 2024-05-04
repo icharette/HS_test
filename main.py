@@ -1,30 +1,51 @@
-#Context: Technical test backend python: extract specific information from a PDF file and present the data in a structured format (JSON, SQLITE3)
-#Methods: main, get_data, parse_data, write_json, write_db, unit_tests
+"""
+Technical test backend python: extract specific information from a PDF file and present the data in a structured format (JSON, SQLITE3).
+
+Setup:
+    Please see README
+Usage:
+    python main.py
+"""
 
 #library imports
 import camelot
 import json
 import sqlite3
-
+import os
 
 def get_data(file_name):
-    table_names = {"Closing Information","Transaction Information","Loan Information"}
+    """
+    This function takes a file name as input and ouputs a list of tables, extracted from the library camelot.
+
+    Parameters:
+    file_name (string): The file name, type PDF, to extract tables from.
+
+    Returns:
+    list (objects): List of table objects.
+    """
+    #unit test if the file is of type pdf?
     try:
     #get list of tables returned from camelot read pdf method, for all pages
-        tables = camelot.read_pdf(pdf_path, flavor='stream', pages="1")
+        tables = camelot.read_pdf(file_name, flavor='stream', pages="1")
+        return tables
     except FileNotFoundError:
         print("No file named : ", file_name)
+        return None
     except Exception as e:
         print("Error : ", e)
-
-    #output tables
-    #for table in tables:
-        #print("---------------------------------------------------")
-        #the table obj needs to be converted to a data frame for wanted output
-        #print(table.df)
-    return tables
+        return None
 
 def get_coordinates(table_name, tables):
+    """
+    This function takes a table name as a string and a list of table objects. It returns the coordinates (row,col) of each table name found in the list of table objects.
+
+    Parameters:
+    table_name (string): Table name.
+    tables (object list): List of table objects.
+
+    Returns:
+    i,j (int): coordinates as integers.
+    """
     if tables:
         #the table name we are looking for is in the first table
         table = tables [0]
@@ -49,6 +70,17 @@ def get_coordinates(table_name, tables):
             return None, None
 
 def parse_table_data(tables, table_dict):
+    """
+    This function takes a list of table objects and a dictionary of dictionaries (with the names of the tables we are looking for). 
+    This function searches the table objects for the names of the tables in table_dict and parses/populates the nested dictionaries accordingly.
+
+    Parameters:
+    tables (object list): List of table objects.
+    table_dict (list: dict of dicts): A dictionary of nested dictionaries. The upper most keys are the names of the tables
+
+    Returns:
+    dict: Populated table_dict.
+    """
     #the table where the information for {"Closing Information","Transaction Information","Loan Information"} is in the first table, according to the camelot extract
     table = tables[0]
     #converting to data frame to iterating through the information
@@ -94,7 +126,20 @@ def parse_table_data(tables, table_dict):
             i = i + 1
     return table_dict
 
-def format_json(data_dict):
+def format_json(data_dict, json_file_name):
+    """
+    This function formats the nested dictionaries to JSON and writes to a JSON file.
+
+    Parameters:
+    table_dict (list: dict of dicts): A dictionary of nested dictionaries. The upper most keys are the names of the tables.
+
+    Returns:
+    Nothing
+    """
+    if os.path.exists(json_file_name):
+        # Delete existing json file
+        os.remove(json_file_name)
+
     #convert to json
     json_obj = json.dumps(data_dict, indent=4)
     json_file = "Closing_Disclosure.json"
@@ -103,14 +148,29 @@ def format_json(data_dict):
 
     print(json_obj)
 
-def format_sql(data):
+def format_sql(data, db_file_name):
+    """
+    This function formats the nested dictionaries to sqlite3 tables in a db.
+
+    Parameters:
+    table_dict (list: dict of dicts): A dictionary of nested dictionaries. The upper most keys are the names of the tables.
+
+    Returns:
+    Nothing
+    """
     try:
+
+        if os.path.exists(db_file_name):
+            # Delete existing database file
+            os.remove(db_file_name)
+
         #connect to db, which creates the db
-        conn = sqlite3.connect('Closing_Disclosure.db')
+        conn = sqlite3.connect(db_file_name)
         cursor = conn.cursor()
 
         #iterate through dictionary of extracted tables and create tables
         for key, item in data.items():
+            #only creating a table in sqlite3 if the table was extracted from the PDF
             if data[key]:
                 #set columns names accordings to the keys in each nested dictionary
                 column_names = list(item.keys())
@@ -122,11 +182,10 @@ def format_sql(data):
                 #table names
                 #replace spaces with underscores, otherwise this causes complication in the queries
                 key = key.replace(" ", "_")
-                print("key: ", key)
+
                 #create table, if it does not already exist
                 #key: table name
                 create_table_sql = f'CREATE TABLE IF NOT EXISTS {key} ({", ".join(f"{name} TEXT" for name in column_names)})'
-                print(create_table_sql)
                 cursor.execute(create_table_sql)
 
                 #populate tables with camelot table PDF extract
@@ -146,24 +205,30 @@ def format_sql(data):
         #and close connection
         conn.close()
 
-if __name__ == "__main__":
-   pdf_path = "Closing_Disclosure.pdf"
+def main():
+   pdf_file = "Closing_Disclosure.pdf"
+   json_file = "Closing_Disclosure.json"
+   db_file = 'Closing_Disclosure.db'
+
    #extract data
-   tables = get_data(pdf_path)
+   tables = get_data(pdf_file)
 
    #base for dictionary where to place extracted information
-   table_dict  = {"Closing Infomation":{}, "Transaction Information": {}, "Loan Information":{}}
+   table_dict  = {"Closing Information":{}, "Transaction Information": {}, "Loan Information":{}}
 
    #if camelot extracted tables
-   if tables:
+   if tables is not None:
     #parse data
     table_dict = parse_table_data(tables, table_dict)
     #format data
-    format_json(table_dict)
-    format_sql(table_dict)
+    format_json(table_dict,json_file)
+    format_sql(table_dict,db_file)
    else:
        print("No tables found")
        #need unit test here
+
+if __name__ == "__main__":
+    main()
    
 
     
