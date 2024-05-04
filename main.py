@@ -41,45 +41,60 @@ def get_coordinates(table_name, tables):
             print(f"Value '{table_name}' not found in the table.")
             return None, None
 
-def parse_table_data(tableKey, tableValue, table_names, row_start, df,i):
-   #iterate through the table data of the rows starting beneath the table titles, in each column (i) accordingly (which corresponds to each table of: {"Closing Information":{}, "Transaction Information": {}, "Loan Information":{}})
-    for index, value in df.iloc[row_start:, i].items():
-        # print("index: ", index)
-        #print("value: ", value)
+def parse_table_data(tables, table_dict):
+    #the table where the information for {"Closing Information","Transaction Information","Loan Information"} is in the first table, according to the camelot extract
+    table = tables[0]
+    #converting to data frame to iterating through the information
+    df = table.df
+    #using the value of i to index through the table title index (seen as a column in the data frame output from the camelot table extraction)
+    i = 0
 
-        #checking if value to avoid keeping track of empty spaces
-        if value:
-            #add to the table_names dictionnary with the table values assigned to each table element in table_names
-            #check if line return in value and if so, split the strings to seperate key(column) and value in each table
-            if '\n' in value:
-                key, value = value.split('\n')
-                table_names[tableKey][key] = value
-    
-    
-    #print(table_names)
+    #iterate through the dictionary of {"Closing Information":{}, "Transaction Information": {}, "Loan Information":{}}
+    for tableKey, tableValue in table_dict.items():
+        #find location of tables: "Closing Information","Transaction Information","Loan Information"
+        row, column = get_coordinates(tableKey, tables)
+        row_start = row + 1
+        #print("row: ", row)
+        #print("column: ", column)
 
+        #get data for each table:
+        #iterate through the table data of the rows starting beneath the table titles, in each column (i) accordingly (which corresponds to each table of: {"Closing Information":{}, "Transaction Information": {}, "Loan Information":{}})
+        for index, value in df.iloc[row_start:, i].items():
+            # print("index: ", index)
+            #print("value: ", value)
+
+            #checking if value to avoid keeping track of empty spaces
+            if value:
+                if "Property" in value:
+                        #add extra line
+                    value += df.iloc[index + 1,i]
+                elif "Borrower" in value:
+                    #add 2 extra lines
+                    value += " " + df.iloc[index + 1,i] + df.iloc[index + 2,i]            
+                if '\n' in value:
+                    key, value = value.split('\n')
+                    if "Loan Type" in key:
+                        #stripping the 'X' selection
+                        value = value[2:]
+                    if "Loan ID #" in key:
+                        #stripping the '#', this causes a problem with the SQL queries
+                        key = key[:-2]
+                    #populating the dictionary for each table
+                    table_dict[tableKey][key] = value
+        i = i + 1
+    return table_dict
+    
 if __name__ == "__main__":
    pdf_path = "Closing_Disclosure.pdf"
    tables = get_data(pdf_path)
    #table_names = {"Closing Information","Transaction Information","Loan Information"}
    table_dict  = {"Closing Information":{}, "Transaction Information": {}, "Loan Information":{}}
-
-   #find location of tables: "Closing Information","Transaction Information","Loan Information"
    if tables:
-        #using the value of i to index through the table title index (seen as a column in the data frame output from the camelot table extraction)
-        i = 0
-        for tableKey, tableValue in table_dict.items():
-           row, column = get_coordinates(tableKey, tables)
-           #print("row: ", row)
-           #print("column: ", column)
-
-           #get data for each table:
-           #iterate through the dictionary of {"Closing Information":{}, "Transaction Information": {}, "Loan Information":{}}
-           parse_table_data(tableKey, tableValue, table_dict, row + 1, tables[0].df,i)
-           i = i + 1
-        print(table_dict)
+    table_dict = parse_table_data(tables, table_dict)
    else:
-       print("no tables found")
-       #need to add unit test for this
+       print("No tables found")
+       #need unit test here
+   print(table_dict)
+   
 
     
