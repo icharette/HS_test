@@ -1,12 +1,12 @@
 # HS_test
 
 ## Libraries & Tools used
-camelot
-json
-sqlite3
-os
-unittest
-git
+camelot<br>
+json<br>
+sqlite3<br>
+os<br>
+unittest<br>
+git<br>
 
 ## Installation
 pip install camelot-py<br>

@@ -107,9 +107,6 @@ def parse_table_data(tables, table_dict):
             #get data for each table:
             #iterate through the table data of the rows starting beneath the table titles, in each column (i) accordingly (which corresponds to each table of: {"Closing Information":{}, "Transaction Information": {}, "Loan Information":{}})
             for index, value in df.iloc[row_start:, i].items():
-                # print("index: ", index)
-                #print("value: ", value)
-
                 #checking if value to avoid keeping track of empty spaces
                 if value:
                     if "Property" in value:
@@ -197,8 +194,6 @@ def format_sql(data, db_file_name):
                 insert_sql = f'INSERT INTO {key} ({", ".join(column_names)}) VALUES ({", ".join("?" for _ in column_names)})'
                 cursor.execute(insert_sql, values)
             
-
-
         #Make sure to commit changes
         conn.commit()
 
@@ -210,28 +205,36 @@ def format_sql(data, db_file_name):
         #and close connection
         conn.close()
 
+
 def main():
-   
+    """
+    This function orchestrates the execution of this script.
 
-   pdf_file = "Closing_Disclosure.pdf"
-   json_file = "Closing_Disclosure.json"
-   db_file = 'Closing_Disclosure.db'
+    Parameters:
+    None 
 
-   #extract data from pdf
-   tables = get_data(pdf_file)
+    Returns:
+    Nothing
+    """
+    pdf_file = "Closing_Disclosure.pdf"
+    json_file = "Closing_Disclosure.json"
+    db_file = "Closing_Disclosure.db"
 
-   #base for dictionary where to place extracted information
-   table_dict  = {"Closing Information":{}, "Transaction Information": {}, "Loan Information":{}}
+    #extract data from pdf
+    tables = get_data(pdf_file)
 
-   #if camelot extracted tables
-   if tables is not None:
-    #parse data
-    table_dict = parse_table_data(tables, table_dict)
-    #format data
-    format_json(table_dict,json_file)
-    format_sql(table_dict,db_file)
-   else:
-       print("No tables found")
+    #base for dictionary where to place extracted information
+    table_dict  = {"Closing Information":{}, "Transaction Information": {}, "Loan Information":{}}
+
+    #if camelot extracted tables
+    if tables is not None:
+        #parse data
+        table_dict = parse_table_data(tables, table_dict)
+        #format data
+        format_json(table_dict,json_file)
+        format_sql(table_dict,db_file)
+    else:
+        print("No tables found")
 
 if __name__ == "__main__":
     
