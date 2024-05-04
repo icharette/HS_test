@@ -119,6 +119,14 @@ def format_sql(data):
         create_table_sql = f'CREATE TABLE IF NOT EXISTS {key} ({", ".join(f"{name} TEXT" for name in column_names)})'
         cursor.execute(create_table_sql)
 
+        #populate tables with camelot table PDF extract
+        insert_sql = f'INSERT INTO {key} ({", ".join(column_names)}) VALUES ({", ".join("?" for _ in column_names)})'
+        cursor.execute(insert_sql, values)
+
+    #Make sure to commit changes and close connection
+    conn.commit()
+    conn.close()
+
 if __name__ == "__main__":
    pdf_path = "Closing_Disclosure.pdf"
    #extract data
