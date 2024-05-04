@@ -2,7 +2,10 @@
 Technical test backend python: extract specific information from a PDF file and present the data in a structured format (JSON, SQLITE3).
 
 Setup:
-    Please see README
+    Please see README.md
+Library choice:
+    Camelot is the most efficient to detect the tables formatted in the PDF.
+    pdfplumber and tabula would require additional parsing.
 Usage:
     python main.py
 """
@@ -12,6 +15,8 @@ import camelot
 import json
 import sqlite3
 import os
+import unittest
+
 
 def get_data(file_name):
     """
@@ -64,7 +69,7 @@ def get_coordinates(table_name, tables):
             if value_found:
                 break
         
-        #IF we haven't found the table name
+        #If we haven't found the table name
         if not value_found:
             print(f"Value '{table_name}' not found in the table.")
             return None, None
@@ -206,11 +211,13 @@ def format_sql(data, db_file_name):
         conn.close()
 
 def main():
+   
+
    pdf_file = "Closing_Disclosure.pdf"
    json_file = "Closing_Disclosure.json"
    db_file = 'Closing_Disclosure.db'
 
-   #extract data
+   #extract data from pdf
    tables = get_data(pdf_file)
 
    #base for dictionary where to place extracted information
@@ -225,10 +232,11 @@ def main():
     format_sql(table_dict,db_file)
    else:
        print("No tables found")
-       #need unit test here
 
 if __name__ == "__main__":
+    
     main()
+    unittest.main()
    
 
     
