@@ -3,6 +3,8 @@
 
 #library imports
 import camelot
+import json
+
 
 def get_data(file_name):
     table_names = {"Closing Information","Transaction Information","Loan Information"}
@@ -83,18 +85,34 @@ def parse_table_data(tables, table_dict):
                     table_dict[tableKey][key] = value
         i = i + 1
     return table_dict
-    
+
+def format_json(data_dict):
+    #convert to json
+    json_obj = json.dumps(data_dict, indent=4)
+    json_file = "Closing_Disclosure.json"
+    with open(json_file, "w") as json_file:
+        json.dump(data_dict, json_file, indent=4)
+
+    print(json_obj)
+
+def format_sql(data):
+    pass
+
 if __name__ == "__main__":
    pdf_path = "Closing_Disclosure.pdf"
+   #extract data
    tables = get_data(pdf_path)
    #table_names = {"Closing Information","Transaction Information","Loan Information"}
    table_dict  = {"Closing Information":{}, "Transaction Information": {}, "Loan Information":{}}
    if tables:
+    #parse data
     table_dict = parse_table_data(tables, table_dict)
+    #format data
+    format_json(table_dict)
    else:
        print("No tables found")
        #need unit test here
-   print(table_dict)
+   #print(table_dict)
    
 
     
