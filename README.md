@@ -1,6 +1,6 @@
 # HS_test
 
-Installation
+## Installation
 pip install camelot-py
 https://pypi.org/project/camelot-py/
 
@@ -11,8 +11,8 @@ squlite3:
 https://www.sqlite.org/download.html
 Precompiled Binaries for Windows: sqlite-tools-win-x64-3450300.zip
 
-Usage
+## Usage
 python main.py
 
-Configuration
+## Configuration
 Add sqlite3 extracted folder name to environment variables PATH
