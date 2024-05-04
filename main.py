@@ -41,11 +41,31 @@ def get_coordinates(table_name, tables):
             print(f"Value '{table_name}' not found in the table.")
             return None, None
 
+def parse_table_date(table_names, row_start, df):
+    
+    i = 0
+    #iterate through the dictionary of {"Closing Information":{}, "Transaction Information": {}, "Loan Information":{}}
+    for tableKey, tableValue in table_names.items():
+        #iterate through the table data of the rows starting beneath the table titles, in each column (i) accordingly (which corresponds to each table of: {"Closing Information":{}, "Transaction Information": {}, "Loan Information":{}})
+        for index, value in df.iloc[row_start:, i].items():
+           # print("index: ", index)
+            #print("value: ", value)
+
+            #checking if value to avoid keeping track of empty spaces
+            if value:
+                #add to the table_names dictionnary with the table values assigned to each table element in table_names
+                #check if line return in value and if so, split the strings to seperate key(column) and value in each table
+                if '\n' in value:
+                    key, value = value.split('\n')
+                    table_names[tableKey][key] = value
+        i = i + 1
+    print(table_names)
 
 if __name__ == "__main__":
    pdf_path = "Closing_Disclosure.pdf"
    tables = get_data(pdf_path)
    table_names = {"Closing Information","Transaction Information","Loan Information"}
+   table_dict  = {"Closing Information":{}, "Transaction Information": {}, "Loan Information":{}}
 
    #find location of tables: "Closing Information","Transaction Information","Loan Information"
    if tables:
@@ -53,6 +73,9 @@ if __name__ == "__main__":
            row, column = get_coordinates(name, tables)
            print("row: ", row)
            print("column: ", column)
+
+           #get data for each table:
+           parse_table_date(table_dict, row + 1, tables[0].df)
    else:
        print("no tables found")
        #need to add unit test for this
