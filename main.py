@@ -4,6 +4,7 @@
 #library imports
 import camelot
 import json
+import sqlite3
 
 
 def get_data(file_name):
@@ -96,7 +97,27 @@ def format_json(data_dict):
     print(json_obj)
 
 def format_sql(data):
-    pass
+    #connect to db, which creates the db
+    conn = sqlite3.connect('Closing_Disclosure.db')
+    cursor = conn.cursor()
+
+    #iterate through dictionary of extracted tables and create tables
+    for key, item in data.items():
+        #set columns names accordings to the keys in each nested dictionary
+        column_names = list(item.keys())
+        #replace spaces with underscores, otherwise this causes complication in the queries
+        column_names = list(map(lambda x: x.replace(" ", "_"), column_names))
+        #set values accordings to the values mapped to the keys in each nested dictionary
+        values = tuple(item.values())
+
+        #table names
+        #replace spaces with underscores, otherwise this causes complication in the queries
+        key = key.replace(" ", "_")
+
+        #create table, if it does not already exist
+        #key: table name
+        create_table_sql = f'CREATE TABLE IF NOT EXISTS {key} ({", ".join(f"{name} TEXT" for name in column_names)})'
+        cursor.execute(create_table_sql)
 
 if __name__ == "__main__":
    pdf_path = "Closing_Disclosure.pdf"
@@ -109,6 +130,7 @@ if __name__ == "__main__":
     table_dict = parse_table_data(tables, table_dict)
     #format data
     format_json(table_dict)
+    format_sql(table_dict)
    else:
        print("No tables found")
        #need unit test here
