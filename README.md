@@ -15,6 +15,7 @@ python version 3.11.8<br>
 To install this project, follow these steps:
 1. Clone the repository<br>
 2. Complete these installations steps:<br>
+
 pip install camelot-py<br>
 https://pypi.org/project/camelot-py/<br>
 <br>
@@ -29,7 +30,7 @@ Add sqlite3 extracted folder name to environment variables PATH<br>
 3. Make sure you have python 3.11.8 version, or any compatible version
 
 ## Configuration
-resources: place the file "Closing_Disclosure.pdf" in the respository folder, at the level of main.py<br>
+Resources: place the file "Closing_Disclosure.pdf" in the respository folder, at the level of main.py<br>
 
 ## Usage
 1. Complete the Installation and Configuration sections<br>

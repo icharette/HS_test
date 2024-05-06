@@ -1,3 +1,13 @@
+"""
+Technical test backend python: unit testing for main.py
+
+Setup:
+    Please see README.md
+
+Usage:
+    python unittesting.py
+"""
+
 import unittest
 import os
 from main import *
