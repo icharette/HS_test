@@ -23,7 +23,7 @@ class TestPDFExtract(unittest.TestCase):
             *args: Positional arguments for the superclass constructor.
             **kwargs: Keyword arguments for the superclass constructor.
         
-        This init function calls the get_data() function from main, since several test methods in this class test its result
+        This init function calls the get_data() function from main.py, since several test methods in this class use this result.
         """
         #calling the super here to make sure when the test framework instantiates this class, everything runs smoothly, since we are overriding the __init__ method
         super().__init__(*args, **kwargs)
@@ -52,7 +52,7 @@ class TestPDFExtract(unittest.TestCase):
         - Verify that the get_data() function returns a list of type TableList.
 
         Expected Outcome:
-        - The function should return a list of of type TableList.
+        - The function should return a list of type TableList.
         """
         #testing that tables were extracted with correct data type from the PDF
         self.assertIsInstance(self.table_extraction,TableList)
@@ -70,11 +70,11 @@ class TestPDFExtract(unittest.TestCase):
         """
         #parsing the data extracted from the pdf and populating the self.table_dict
         test_data = parse_table_data(self.table_extraction, self.table_dict)
-        #if test_data a dict?
-        self.assertIsInstance(test_data, dict, "Variable is not of type JSON.")
+        #is test_data a dictionary?
+        self.assertIsInstance(test_data, dict, "Variable is not of type Dictionary.")
          #is each value in the variable a dictionary?
         for key, value in test_data.items():
-            self.assertIsInstance(value, dict, f"Value for key '{key}' is not a dictionary")
+            self.assertIsInstance(value, dict, f"Value for key '{key}' is not a Dictionary")
         print("Test data parsing: PASSED")
 
 

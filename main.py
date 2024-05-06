@@ -80,7 +80,7 @@ def parse_table_data(tables, table_dict):
     table_dict (list: dict of dicts): A dictionary of nested dictionaries. The upper most keys are the names of the tables
 
     Returns:
-    dict: Populated table_dict.
+    table_dict (dict): Populated table_dict.
     """
     #the table where the information for {"Closing Information","Transaction Information","Loan Information"} is in the first table, according to the camelot extract
     table = tables[0]
@@ -101,12 +101,13 @@ def parse_table_data(tables, table_dict):
             #print("column: ", column)
 
             #get data for each table:
-            #iterate through the table data of the rows starting beneath the table titles, in each column (i) accordingly (which corresponds to each table of: {"Closing Information":{}, "Transaction Information": {}, "Loan Information":{}})
+            #iterate through the rows of the table, starting beneath the table titles
+            #by iterating in each column (i) accordingly (which corresponds to each table of: {"Closing Information":{}, "Transaction Information": {}, "Loan Information":{}})
             for index, value in df.iloc[row_start:, i].items():
                 #checking if value to avoid keeping track of empty spaces
                 if value:
                     if "Property" in value:
-                            #add extra line
+                        #add extra line
                         value += df.iloc[index + 1,i]
                     elif "Borrower" in value:
                         #add 2 extra lines
@@ -135,7 +136,7 @@ def format_json(data_dict, json_file_name):
     json_obj (json): JSON object of the extracted tables
     """
     if os.path.exists(json_file_name):
-        # Delete existing json file
+        #delete existing json file
         os.remove(json_file_name)
 
     #convert to json
@@ -148,7 +149,7 @@ def format_json(data_dict, json_file_name):
 
 def format_sql(data, db_file_name):
     """
-    This function formats the nested dictionaries to sqlite3 tables in a db.
+    This function formats the nested dictionaries to a sqlite3 db.
 
     Parameters:
     table_dict (list: dict of dicts): A dictionary of nested dictionaries. The upper most keys are the names of the tables.
@@ -159,7 +160,7 @@ def format_sql(data, db_file_name):
     try:
 
         if os.path.exists(db_file_name):
-            # Delete existing database file
+            #delete existing database file
             os.remove(db_file_name)
 
         #connect to db, which creates the db
@@ -172,7 +173,7 @@ def format_sql(data, db_file_name):
             if data[key]:
                 #set columns names accordings to the keys in each nested dictionary
                 column_names = list(item.keys())
-                #replace spaces with underscores, otherwise this causes complication in the queries
+                #replace spaces with underscores, otherwise this causes complications in the queries
                 column_names = list(map(lambda x: x.replace(" ", "_"), column_names))
                 #set values accordings to the values mapped to the keys in each nested dictionary
                 values = tuple(item.values())
