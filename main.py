@@ -5,7 +5,6 @@ Setup:
     Please see README.md
 Library choice:
     Camelot is the most efficient to detect the tables formatted in the PDF.
-    pdfplumber and tabula would require additional parsing.
 Usage:
     python main.py
 """
@@ -15,8 +14,6 @@ import camelot
 import json
 import sqlite3
 import os
-import unittest
-
 
 def get_data(file_name):
     """
@@ -28,7 +25,6 @@ def get_data(file_name):
     Returns:
     list (objects): List of table objects.
     """
-    #unit test if the file is of type pdf?
     try:
     #get list of tables returned from camelot read pdf method, for all pages
         tables = camelot.read_pdf(file_name, flavor='stream', pages="1")
@@ -136,7 +132,7 @@ def format_json(data_dict, json_file_name):
     table_dict (list: dict of dicts): A dictionary of nested dictionaries. The upper most keys are the names of the tables.
 
     Returns:
-    Nothing
+    json_obj (json): JSON object of the extracted tables
     """
     if os.path.exists(json_file_name):
         # Delete existing json file
@@ -144,11 +140,11 @@ def format_json(data_dict, json_file_name):
 
     #convert to json
     json_obj = json.dumps(data_dict, indent=4)
-    json_file = "Closing_Disclosure.json"
-    with open(json_file, "w") as json_file:
-        json.dump(data_dict, json_file, indent=4)
+    with open(json_file_name, "w") as file:
+        file.write(json_obj)
 
     print(json_obj)
+    return json_obj
 
 def format_sql(data, db_file_name):
     """
@@ -209,6 +205,10 @@ def format_sql(data, db_file_name):
 def main():
     """
     This function orchestrates the execution of this script.
+    1. We extract the data from the PDF file using the camelot library
+    2. We parse the data and populate the table_dict variable with the incoming table data
+    3. We format the data in JSON and write it to a JSON file
+    4. We insert the data into a SQLite DB
 
     Parameters:
     None 
@@ -237,9 +237,7 @@ def main():
         print("No tables found")
 
 if __name__ == "__main__":
-    
     main()
-    unittest.main()
    
 
     
