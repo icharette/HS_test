@@ -1,4 +1,5 @@
 # HS_test
+Technical test backend python: extract specific information from a PDF file and present the data in a structured format (JSON, SQLITE3).
 
 ## Libraries 
 camelot version 0.11.0<br>
